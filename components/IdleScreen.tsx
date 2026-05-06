@@ -57,7 +57,7 @@ function WelcomeStep({ onContinue }: WelcomeStepProps) {
         Mental math for your workday.
       </p>
       <p className="text-sm text-ink-muted max-w-sm leading-relaxed mb-10">
-        Learn shortcuts for the math you do at work — percentages, ratios, growth, sizing, and more.
+        Daily shortcuts to skip the paper and pencil.
       </p>
       <button
         onClick={onContinue}
