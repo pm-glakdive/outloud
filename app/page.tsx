@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useApp } from "@/lib/store";
 import { Header } from "@/components/Header";
+import { IdleScreen } from "@/components/IdleScreen";
 import { ProblemCard } from "@/components/ProblemCard";
 import { ResultScreen } from "@/components/ResultScreen";
 import { Toast } from "@/components/Toast";
@@ -12,13 +13,13 @@ import { Toast } from "@/components/Toast";
  *
  * Render branches map directly to session.status:
  *
- *   not hydrated → skeleton (avoid hydration mismatch)
- *   idle         → "Start today's puzzle" CTA
- *   answering    → ProblemCard (input visible, no reveal)
- *   reviewing    → ProblemCard (reveal panel visible, "Next" CTA)
+ *   not hydrated → skeleton
+ *   idle         → IdleScreen (CTA + mode toggle)
+ *   answering    → compact header + ProblemCard
+ *   reviewing    → compact header + ProblemCard with reveal
  *   complete     → ResultScreen
  *
- * Safety nets (eng review decision):
+ * Safety nets:
  *   - storageOK=false → toast warning streak won't save
  *   - clipboard fail  → toast with copy-this-manually text
  */
@@ -69,17 +70,21 @@ export default function Home() {
     session && session.results.length > 0
       ? session.results[session.results.length - 1]
       : null;
+  const compactHeader = status === "answering" || status === "reviewing";
+  // Idle owns its own visual identity (Welcome + Preview), no parent header.
+  const showHeader = status !== "idle";
 
   return (
     <>
-      <Header
-        streak={streak}
-        settings={settings}
-        onToggleMode={handleToggleMode}
-      />
+      {showHeader && <Header streak={streak} compact={compactHeader} />}
 
       {status === "idle" && (
-        <IdleScreen onStart={startToday} streakCount={streak.current} />
+        <IdleScreen
+          onStart={startToday}
+          streakCount={streak.current}
+          settings={settings}
+          onToggleMode={handleToggleMode}
+        />
       )}
 
       {(status === "answering" || status === "reviewing") && session && (
@@ -107,36 +112,6 @@ export default function Home() {
 
       <Toast message={toast} onDismiss={() => setToast(null)} />
     </>
-  );
-}
-
-interface IdleScreenProps {
-  onStart: () => void;
-  streakCount: number;
-}
-
-function IdleScreen({ onStart, streakCount }: IdleScreenProps) {
-  return (
-    <div className="flex-1 flex flex-col items-center justify-center text-center">
-      <h2 className="text-2xl font-semibold tracking-tight mb-2">
-        Today&apos;s puzzle
-      </h2>
-      <p className="text-sm text-ink-subtle max-w-xs mb-8">
-        8 mental-math problems. Mostly things you actually do at work. Aim for
-        under 3 minutes.
-      </p>
-      <button
-        onClick={onStart}
-        className="bg-ink text-bg rounded-xl px-8 py-4 text-sm font-medium uppercase tracking-wide hover:bg-ink/90 transition-colors"
-      >
-        Start
-      </button>
-      {streakCount > 0 && (
-        <p className="mt-6 text-xs text-ink-muted">
-          🔥 {streakCount}-day streak. Keep it alive.
-        </p>
-      )}
-    </div>
   );
 }
 

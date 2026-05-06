@@ -36,8 +36,13 @@ export interface Problem {
   answer: number;
   /** Acceptable absolute tolerance. Default per category in answer.ts. */
   tolerance?: number;
-  /** "Method" reveal text shown after submit. Replaces the original "trick" framing. */
-  method: string;
+  /**
+   * "Method" reveal shown after submit. Two-part structure forced by user
+   * feedback in v0.1: a single-line method without the "why" reads as magic.
+   *   why → the principle that makes the shortcut work (one sentence)
+   *   how → the actual mental steps, in plain conversational English (one sentence)
+   */
+  method: { why: string; how: string };
   /** 1 = easy, 2 = medium, 3 = hard. Used later for adaptive weighting. */
   difficulty: 1 | 2 | 3;
 }
@@ -60,7 +65,19 @@ export type SessionStatus =
   | "reviewing" // user just submitted, method reveal showing, waiting for "Next"
   | "complete"; // all problems done, result screen showing
 
+/**
+ * Bump this whenever the Session shape (or its embedded Problem shape)
+ * changes in a way that would break old persisted data. The store discards
+ * any localStorage session whose schemaVersion doesn't match.
+ *
+ *   v1 → initial release
+ *   v2 → method changed from string to { why, how }
+ */
+export const SESSION_SCHEMA_VERSION = 2;
+
 export interface Session {
+  /** Schema version of the persisted session. See SESSION_SCHEMA_VERSION. */
+  schemaVersion: number;
   /** Local date YYYY-MM-DD this session belongs to. */
   date: string;
   /** Display mode. Settings toggle changes the NEXT session, not mid-stream. */

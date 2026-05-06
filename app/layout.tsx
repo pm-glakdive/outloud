@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Napkin — Mental math for knowledge workers",
+  title: "Outloud — Say the number before they reach for the calculator",
   description:
-    "A daily mental-math drill for PMs, analysts, and founders. Stop pulling out the calculator in meetings.",
+    "A daily mental-math drill for the meetings where you can't pull out paper and pen. Anchor, adjust, say it.",
 };
 
 export const viewport: Viewport = {

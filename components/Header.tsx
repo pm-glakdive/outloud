@@ -1,30 +1,50 @@
 "use client";
 
-import type { StreakState, UserSettings } from "@/lib/types";
+import type { StreakState } from "@/lib/types";
 
 interface HeaderProps {
   streak: StreakState;
-  settings: UserSettings;
-  onToggleMode: () => void;
+  /** When true, render the slim header used during play. */
+  compact?: boolean;
 }
 
-export function Header({ streak, settings, onToggleMode }: HeaderProps) {
+/**
+ * Two render modes:
+ *
+ *   compact=false (idle/complete) → name + tagline + streak
+ *   compact=true  (answering/reviewing) → name + streak in one row, no tagline
+ *
+ * The mode toggle lives on the IdleScreen instead of in the header, so during
+ * play there's no chrome competing with the question for attention.
+ */
+export function Header({ streak, compact = false }: HeaderProps) {
+  // Hide the streak indicator entirely when the user hasn't completed any day yet.
+  // Showing "Day 1" before they've done anything reads as misleading status.
+  const streakBadge = streak.current > 0;
+
+  if (compact) {
+    return (
+      <header className="flex items-baseline justify-between mb-5">
+        <h1 className="text-base font-semibold tracking-tight">Outloud</h1>
+        {streakBadge && (
+          <span className="text-xs text-ink-muted num">
+            🔥 {streak.current}
+          </span>
+        )}
+      </header>
+    );
+  }
+
   return (
-    <header className="flex items-center justify-between mb-6">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Napkin</h1>
-        <p className="text-xs text-ink-muted mt-0.5">
-          Daily mental math · {streak.current > 0 ? `${streak.current}-day streak` : "Day 1"}
-        </p>
+    <header className="mb-6">
+      <div className="flex items-baseline justify-between">
+        <h1 className="text-xl font-semibold tracking-tight">Outloud</h1>
+        {streakBadge && (
+          <span className="text-xs text-ink-muted shrink-0 ml-3 num">
+            🔥 {streak.current}-day streak
+          </span>
+        )}
       </div>
-      <button
-        onClick={onToggleMode}
-        className="text-xs uppercase tracking-wide text-ink-subtle hover:text-ink border border-ink-muted/30 hover:border-ink-muted rounded-full px-3 py-1.5 transition-colors"
-        aria-label={`Switch to ${settings.mode === "context" ? "pure math" : "context"} mode (applies next puzzle)`}
-        title="Toggle context vs pure math (applies to next puzzle)"
-      >
-        {settings.mode === "context" ? "Context" : "Pure"}
-      </button>
     </header>
   );
 }

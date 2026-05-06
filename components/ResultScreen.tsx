@@ -73,7 +73,7 @@ export function ResultScreen({
       </button>
 
       <p className="text-xs text-center text-ink-muted">
-        Come back tomorrow for a fresh puzzle.
+        Come back tomorrow to keep your edge.
       </p>
 
       <details className="mt-8 text-sm">

@@ -29,6 +29,7 @@ import type {
   StreakState,
   UserSettings,
 } from "./types";
+import { SESSION_SCHEMA_VERSION } from "./types";
 import { localDateString, pickDaily } from "./seed";
 import { extendStreak, FRESH_STREAK } from "./streak";
 import { isCorrect, parseAnswer } from "./answer";
@@ -83,6 +84,7 @@ function buildFreshSession(mode: UserSettings["mode"]): Session {
   const date = localDateString();
   const problems: Problem[] = pickDaily(date, PROBLEM_BANK, DAILY_COUNT);
   return {
+    schemaVersion: SESSION_SCHEMA_VERSION,
     date,
     mode,
     problems,
@@ -129,13 +131,17 @@ export const useApp = create<AppState>((set, get) => ({
       }
     }
 
-    // Session — only restore if it's still today's date.
+    // Session — only restore if it's still today's date AND schema matches.
+    // A schema mismatch means we've shipped a breaking change to the Problem
+    // shape since this session was saved (e.g. method: string → method: {why,how}).
+    // Rather than render zombie data, drop the old session.
     let session: Session | null = null;
     const rawSession = safeLocalGet(STORAGE_KEYS.session);
     if (rawSession) {
       try {
         const parsed = JSON.parse(rawSession) as Session;
-        if (parsed.date === today) {
+        const schemaOK = parsed.schemaVersion === SESSION_SCHEMA_VERSION;
+        if (parsed.date === today && schemaOK) {
           // Reset the per-problem timer to "now" on rehydrate so the
           // user doesn't get penalized for time spent away.
           session = {
@@ -143,6 +149,13 @@ export const useApp = create<AppState>((set, get) => ({
             currentProblemStartedAt:
               parsed.status === "answering" ? Date.now() : null,
           };
+        } else if (!schemaOK) {
+          // Stale schema — clear it so the next visit doesn't keep tripping over it.
+          try {
+            window.localStorage.removeItem(STORAGE_KEYS.session);
+          } catch {
+            /* ignore */
+          }
         }
       } catch {
         storageOK = false;

@@ -4,10 +4,10 @@
 //
 // Format:
 //
-//   Napkin · 2026-05-03
+//   Outloud · 2026-05-03
 //   ✅✅✅⬜✅✅✅✅  7/8 in 1:42
 //   🔥 Streak 5
-//   napkin.app
+//   outloud.app
 //
 // ⬜ = wrong, ✅ = correct. One emoji per problem in order.
 //
@@ -33,10 +33,10 @@ export function buildShareString(
   const correctCount = session.results.filter((r) => r.correct).length;
   const totalMs = session.results.reduce((sum, r) => sum + r.elapsedMs, 0);
   const lines = [
-    `Napkin · ${session.date}`,
+    `Outloud · ${session.date}`,
     `${buildEmojiRow(session.results)}  ${correctCount}/${session.results.length} in ${formatDuration(totalMs)}`,
     `🔥 Streak ${streak.current}`,
-    "napkin.app",
+    "outloud.app",
   ];
   return lines.join("\n");
 }

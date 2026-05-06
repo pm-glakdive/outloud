@@ -18,11 +18,15 @@ interface ProblemCardProps {
 /**
  * One problem at a time. Two render phases:
  *
- *   isReviewing=false → input visible, submit button active, no reveal
- *   isReviewing=true  → input frozen, reveal panel + Next button visible
+ *   isReviewing=false → input visible, Submit + Skip buttons, no reveal
+ *   isReviewing=true  → input frozen, reveal panel + Next button
  *
- * State machine is owned by the store; this component is purely presentational
- * for the input/reveal split.
+ * Skip is a soft "I don't know" path: the answer records as empty (counts
+ * wrong), but the user still sees the WHY/HOW reveal so they LEARN. The
+ * point of Outloud is the method, not the score.
+ *
+ * Layout: vertically centered so the prompt+input land in the visual middle
+ * of the viewport, not pinned to the top.
  */
 export function ProblemCard({
   problem,
@@ -39,7 +43,7 @@ export function ProblemCard({
   const nextRef = useRef<HTMLButtonElement>(null);
 
   // Focus management:
-  //   - answering phase → focus input
+  //   - answering phase → focus input so the keyboard pops + Enter submits
   //   - reviewing phase → focus Next button so Enter advances
   useEffect(() => {
     const id = window.setTimeout(() => {
@@ -60,11 +64,16 @@ export function ProblemCard({
     onSubmit(raw);
   };
 
+  const handleSkip = () => {
+    if (isReviewing) return;
+    onSubmit(""); // empty answer, counts as wrong; reveal still shows
+  };
+
   const promptText =
     mode === "context" ? problem.prompt.context : problem.prompt.pure;
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col justify-center">
       <div className="flex items-center justify-between text-xs text-ink-muted uppercase tracking-wider mb-3">
         <span>
           Question {index + 1} of {total}
@@ -76,18 +85,19 @@ export function ProblemCard({
         <p className="text-lg leading-snug">{promptText}</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
+      <form onSubmit={handleSubmit} className="flex gap-2 mb-2">
         <input
           ref={inputRef}
           type="text"
           inputMode="decimal"
+          enterKeyHint="send"
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
           value={isReviewing ? lastResult?.rawAnswer ?? "" : raw}
           onChange={(e) => setRaw(e.target.value)}
           disabled={isReviewing}
-          placeholder="Your answer"
+          placeholder="Type your answer, press Enter"
           className="num flex-1 bg-bg-card border border-ink-muted/30 rounded-xl px-4 py-3 text-lg outline-none focus:border-ink disabled:opacity-60"
           aria-label="Your answer"
         />
@@ -101,6 +111,18 @@ export function ProblemCard({
           </button>
         )}
       </form>
+
+      {!isReviewing && (
+        <div className="flex justify-end mb-4">
+          <button
+            type="button"
+            onClick={handleSkip}
+            className="text-xs text-ink-muted hover:text-ink-subtle uppercase tracking-wider px-2 py-1"
+          >
+            Skip — show me the method
+          </button>
+        </div>
+      )}
 
       {isReviewing && lastResult && (
         <>
@@ -125,6 +147,7 @@ interface RevealPanelProps {
 
 function RevealPanel({ problem, result }: RevealPanelProps) {
   const correct = result.correct;
+  const skipped = result.rawAnswer === "";
   return (
     <div
       className={`rounded-2xl border p-5 ${
@@ -139,13 +162,13 @@ function RevealPanel({ problem, result }: RevealPanelProps) {
             correct ? "text-accent" : "text-accent-warm"
           }`}
         >
-          {correct ? "Correct" : "Not quite"}
+          {correct ? "Correct" : skipped ? "Skipped" : "Not quite"}
         </span>
         <span className="text-xs text-ink-muted num">
           {(result.elapsedMs / 1000).toFixed(1)}s
         </span>
       </div>
-      {!correct && (
+      {!correct && !skipped && (
         <p className="text-sm text-ink-subtle mb-3">
           You said{" "}
           <span className="num font-medium text-ink">
@@ -155,11 +178,24 @@ function RevealPanel({ problem, result }: RevealPanelProps) {
           <span className="num font-medium text-ink">{problem.answer}</span>.
         </p>
       )}
-      <div>
-        <p className="text-xs text-ink-muted uppercase tracking-wider mb-1">
-          Method
+      {skipped && (
+        <p className="text-sm text-ink-subtle mb-3">
+          Answer: <span className="num font-medium text-ink">{problem.answer}</span>.
         </p>
-        <p className="text-sm leading-relaxed text-ink">{problem.method}</p>
+      )}
+      <div className="space-y-3">
+        <div>
+          <p className="text-xs text-ink-muted uppercase tracking-wider mb-1">
+            The logic
+          </p>
+          <p className="text-sm leading-relaxed text-ink">{problem.method.why}</p>
+        </div>
+        <div>
+          <p className="text-xs text-ink-muted uppercase tracking-wider mb-1">
+            The shortcut
+          </p>
+          <p className="text-sm leading-relaxed text-ink">{problem.method.how}</p>
+        </div>
       </div>
     </div>
   );

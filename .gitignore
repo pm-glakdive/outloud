@@ -38,3 +38,4 @@ bun.lock
 
 # claude (workspace state, don't commit personal config)
 .claude/settings.local.json
+out/
