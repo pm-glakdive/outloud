@@ -1,0 +1,22 @@
+{
+  // Cloudflare Workers config for Outloud.
+  //
+  // We deploy as a "Workers Static Assets" deployment: no server script,
+  // just the contents of ./out (Next.js static export) served from
+  // Cloudflare's edge. This overrides Cloudflare's auto-detection that
+  // would otherwise try to run the OpenNext server-side adapter (which
+  // is incompatible with our `output: "export"` Next.js build).
+  //
+  // See: https://developers.cloudflare.com/workers/static-assets/
+
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "outloud",
+  "compatibility_date": "2026-05-06",
+  "assets": {
+    // Built by `next build` because next.config.ts has `output: "export"`.
+    "directory": "./out",
+    // Serve out/404.html for any unknown path. Outloud is a single-page
+    // app; client-side routing handles in-app navigation.
+    "not_found_handling": "404-page"
+  }
+}

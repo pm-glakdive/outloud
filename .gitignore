@@ -38,4 +38,7 @@ bun.lock
 
 # claude (workspace state, don't commit personal config)
 .claude/settings.local.json
-out/
+
+# wrangler local state (don't commit secrets / build artifacts)
+.wrangler/
+.dev.vars
